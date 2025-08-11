@@ -13,6 +13,7 @@ resource "aws_lb" "main" {
 }
 
 resource "aws_lb_target_group" "main" {
+  target_type = "ip"
   name     = "ecs-demo-tg"
   port     = 80
   protocol = "HTTP"
