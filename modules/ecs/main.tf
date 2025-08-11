@@ -9,26 +9,18 @@ resource "aws_launch_template" "ecs" {
 
   network_interfaces {
     associate_public_ip_address = false
-    security_groups             = [module.security_groups.ecs_sg_id]
-    subnet_id                   = module.vpc.private_subnets[0]
+    security_groups             = [var.ecs_sg_id]
+    subnet_id                   = var.private_subnets[0]
   }
 }
 
-data "aws_ami" "ecs_optimized" {
-  most_recent = true
-  owners      = ["amazon"]
-  filter {
-    name   = "name"
-    values = ["amzn2-ami-ecs-hvm-*-x86_64-ebs"]
-  }
-}
 
 resource "aws_autoscaling_group" "ecs" {
   name                      = "ecs-demo-asg"
   max_size                  = 1
   min_size                  = 1
   desired_capacity          = 1
-  vpc_zone_identifier       = module.vpc.private_subnets
+  vpc_zone_identifier       = var.private_subnets
   launch_template {
     id      = aws_launch_template.ecs.id
     version = "$Latest"

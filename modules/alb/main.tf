@@ -2,8 +2,8 @@ resource "aws_lb" "main" {
   name               = "ecs-demo-alb"
   internal           = false
   load_balancer_type = "application"
-  security_groups    = [module.security_groups.alb_sg_id]
-  subnets            = module.vpc.public_subnets
+  security_groups    = [var.alb_sg_id]
+  subnets            = var.public_subnets
 
   enable_deletion_protection = false
 
@@ -16,7 +16,7 @@ resource "aws_lb_target_group" "main" {
   name     = "ecs-demo-tg"
   port     = 80
   protocol = "HTTP"
-  vpc_id   = module.vpc.vpc_id
+  vpc_id   = var.vpc_id
 
   health_check {
     path                = "/"

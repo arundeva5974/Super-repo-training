@@ -29,12 +29,12 @@ resource "aws_ecs_service" "hello_world" {
   launch_type     = "EC2"
   desired_count   = 1
   network_configuration {
-    subnets          = module.vpc.private_subnets
-    security_groups  = [module.security_groups.ecs_sg_id]
+    subnets          = var.private_subnets
+    security_groups  = [var.ecs_sg_id]
     assign_public_ip = false
   }
   load_balancer {
-    target_group_arn = module.alb.target_group_arn
+    target_group_arn = var.target_group_arn
     container_name   = "hello-world"
     container_port   = 80
   }

@@ -1,7 +1,7 @@
 resource "aws_security_group" "alb" {
   name        = "ecs-alb-sg"
   description = "Security group for ALB"
-  vpc_id      = module.vpc.vpc_id
+  vpc_id      = var.vpc_id
 
   ingress {
     from_port   = 80
@@ -32,7 +32,7 @@ resource "aws_security_group" "alb" {
 resource "aws_security_group" "ecs" {
   name        = "ecs-service-sg"
   description = "Security group for ECS service"
-  vpc_id      = module.vpc.vpc_id
+  vpc_id      = var.vpc_id
 
   ingress {
     from_port       = 80
