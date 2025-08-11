@@ -7,6 +7,12 @@ resource "aws_launch_template" "ecs" {
   image_id      = data.aws_ami.ecs_optimized.id
   instance_type = "t3.micro"
 
+  user_data = base64encode(<<EOF
+#!/bin/bash
+echo ECS_CLUSTER=${aws_ecs_cluster.main.name} >> /etc/ecs/ecs.config
+EOF
+  )
+
   network_interfaces {
     associate_public_ip_address = false
     security_groups             = [var.ecs_sg_id]
