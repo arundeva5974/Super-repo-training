@@ -5,5 +5,5 @@ output "ecs_cluster_id" {
 
 output "ecs_service_name" {
   description = "The name of the ECS service"
-  value       = aws_ecs_service.hello_world.name
+  value       = element(concat(aws_ecs_service.hello_world_cp[*].name, aws_ecs_service.hello_world_lt[*].name), 0)
 }

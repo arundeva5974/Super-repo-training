@@ -51,9 +51,11 @@ EOF
 
 resource "aws_autoscaling_group" "ecs" {
   name                      = "ecs-demo-asg"
-  max_size                  = 3
+  max_size                  = 1
   min_size                  = 1
-  desired_capacity          = 2
+  desired_capacity          = 1
+  # Required when capacity provider has managed_termination_protection = ENABLED
+  protect_from_scale_in = var.enable_capacity_provider
   vpc_zone_identifier       = var.private_subnets
   launch_template {
     id      = aws_launch_template.ecs.id
@@ -62,6 +64,12 @@ resource "aws_autoscaling_group" "ecs" {
   tag {
     key                 = "Name"
     value               = "ecs-demo-instance"
+    propagate_at_launch = true
+  }
+  # Tag required for ECS Capacity Provider managed scaling/termination
+  tag {
+    key                 = "AmazonECSManaged"
+    value               = "true"
     propagate_at_launch = true
   }
 }

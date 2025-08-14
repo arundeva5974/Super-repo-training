@@ -32,4 +32,9 @@ module "ecs" {
   ecs_sg_id       = module.security.ecs_sg_id
   alb_sg_id       = module.security.alb_sg_id
   target_group_arn = module.alb.target_group_arn
+
+  # Enable Task 2 features
+  enable_capacity_provider   = false
+  enable_service_autoscaling = true
+  service_min_capacity       = 1
 }
