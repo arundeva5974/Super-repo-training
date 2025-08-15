@@ -8,7 +8,7 @@ resource "aws_ecs_task_definition" "hello_world" {
 
   container_definitions = jsonencode([
     {
-      name      = "hello-world"
+      name      = "web-app"
       image     = "${aws_ecr_repository.app.repository_url}:${var.ecr_image_tag}"
       essential = true
       portMappings = [
@@ -45,7 +45,7 @@ resource "aws_ecs_service" "hello_world_lt" {
   }
   load_balancer {
     target_group_arn = var.target_group_arn
-    container_name   = "hello-world"
+    container_name   = "web-app"
     container_port   = 80
   }
   depends_on = [aws_autoscaling_group.ecs]
@@ -73,7 +73,7 @@ resource "aws_ecs_service" "hello_world_cp" {
   }
   load_balancer {
     target_group_arn = var.target_group_arn
-    container_name   = "hello-world"
+    container_name   = "web-app"
     container_port   = 80
   }
 
