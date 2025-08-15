@@ -12,8 +12,8 @@ on:
 env:
   AWS_REGION: us-east-1
   TF_VERSION: 1.5.0
-  TF_BACKEND_BUCKET: "your-terraform-state-bucket"  # Update this with your S3 bucket name
-  TF_BACKEND_DYNAMODB: "terraform-locks"           # Update this with your DynamoDB table name
+  TF_BACKEND_BUCKET: "yourcompany-ecs-terraform-state-arundeva-20250811"  # Updated S3 bucket
+  TF_BACKEND_DYNAMODB: "terraform-locks"  # Update if your table name is different           # Update this with your DynamoDB table name
 
 jobs:
   terraform:
