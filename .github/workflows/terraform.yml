@@ -25,6 +25,24 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v3
 
+    - name: Normalize line endings (LF)
+      run: |
+        git config core.autocrlf false
+        python - <<'PY'
+        import os
+        exts = ('.tf', '.tfvars', '.hcl', '.yaml', '.yml')
+        for root, _, files in os.walk('.'):
+            for f in files:
+                if f.endswith(exts):
+                    p = os.path.join(root, f)
+                    with open(p, 'rb') as fh:
+                        data = fh.read()
+                    new = data.replace(b'\r\n', b'\n').replace(b'\r', b'\n')
+                    if new != data:
+                        with open(p, 'wb') as fh:
+                            fh.write(new)
+        PY
+
     - name: Setup Terraform
       uses: hashicorp/setup-terraform@v2
       with:
