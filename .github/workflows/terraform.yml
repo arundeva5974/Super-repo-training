@@ -1,89 +1,89 @@
-name: 'Terraform'
+# name: 'Terraform'
 
-on:
-  push:
-    branches: [main]
-    paths:
-      - '**/*.tf'
-      - '.github/workflows/terraform.yml'
-  pull_request:
-    branches: [main]
+# on:
+#   push:
+#     branches: [main]
+#     paths:
+#       - '**/*.tf'
+#       - '.github/workflows/terraform.yml'
+#   pull_request:
+#     branches: [main]
 
-env:
-  AWS_REGION: us-east-1
-  TF_VERSION: 1.5.0
-  TF_BACKEND_BUCKET: "yourcompany-ecs-terraform-state-arundeva-20250811"  # Updated S3 bucket
-  TF_BACKEND_DYNAMODB: "terraform-lock-table"  # Align with backend.tf
+# env:
+#   AWS_REGION: us-east-1
+#   TF_VERSION: 1.5.0
+#   TF_BACKEND_BUCKET: "yourcompany-ecs-terraform-state-arundeva-20250811"  # Updated S3 bucket
+#   TF_BACKEND_DYNAMODB: "terraform-lock-table"  # Align with backend.tf
 
-jobs:
-  terraform:
-    name: 'Terraform'
-    runs-on: ubuntu-latest
-    environment: production
+# jobs:
+#   terraform:
+#     name: 'Terraform'
+#     runs-on: ubuntu-latest
+#     environment: production
 
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v3
+#     steps:
+#     - name: Checkout
+#       uses: actions/checkout@v3
 
-    - name: Normalize line endings (LF)
-      run: |
-        git config core.autocrlf false
-        python - <<'PY'
-        import os
-        exts = ('.tf', '.tfvars', '.hcl', '.yaml', '.yml')
-        for root, _, files in os.walk('.'):
-            for f in files:
-                if f.endswith(exts):
-                    p = os.path.join(root, f)
-                    with open(p, 'rb') as fh:
-                        data = fh.read()
-                    new = data.replace(b'\r\n', b'\n').replace(b'\r', b'\n')
-                    if new != data:
-                        with open(p, 'wb') as fh:
-                            fh.write(new)
-        PY
+#     - name: Normalize line endings (LF)
+#       run: |
+#         git config core.autocrlf false
+#         python - <<'PY'
+#         import os
+#         exts = ('.tf', '.tfvars', '.hcl', '.yaml', '.yml')
+#         for root, _, files in os.walk('.'):
+#             for f in files:
+#                 if f.endswith(exts):
+#                     p = os.path.join(root, f)
+#                     with open(p, 'rb') as fh:
+#                         data = fh.read()
+#                     new = data.replace(b'\r\n', b'\n').replace(b'\r', b'\n')
+#                     if new != data:
+#                         with open(p, 'wb') as fh:
+#                             fh.write(new)
+#         PY
 
-    - name: Setup Terraform
-      uses: hashicorp/setup-terraform@v2
-      with:
-        terraform_version: ${{ env.TF_VERSION }}
-        terraform_wrapper: false
+#     - name: Setup Terraform
+#       uses: hashicorp/setup-terraform@v2
+#       with:
+#         terraform_version: ${{ env.TF_VERSION }}
+#         terraform_wrapper: false
 
-    - name: Configure AWS Credentials
-      uses: aws-actions/configure-aws-credentials@v1
-      with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: ${{ env.AWS_REGION }}
+#     - name: Configure AWS Credentials
+#       uses: aws-actions/configure-aws-credentials@v1
+#       with:
+#         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+#         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+#         aws-region: ${{ env.AWS_REGION }}
 
-    - name: Terraform Init
-      run: |
-        terraform init \
-          -backend-config="bucket=${{ env.TF_BACKEND_BUCKET }}" \
-          -backend-config="dynamodb_table=${{ env.TF_BACKEND_DYNAMODB }}" \
-          -backend-config="region=${{ env.AWS_REGION }}" \
-          -input=false
+#     - name: Terraform Init
+#       run: |
+#         terraform init \
+#           -backend-config="bucket=${{ env.TF_BACKEND_BUCKET }}" \
+#           -backend-config="dynamodb_table=${{ env.TF_BACKEND_DYNAMODB }}" \
+#           -backend-config="region=${{ env.AWS_REGION }}" \
+#           -input=false
 
-    - name: Terraform Format (write)
-      run: terraform fmt -recursive
+#     - name: Terraform Format (write)
+#       run: terraform fmt -recursive
 
-    - name: Terraform Format (check)
-      run: terraform fmt -recursive -check -diff
+#     - name: Terraform Format (check)
+#       run: terraform fmt -recursive -check -diff
 
-    - name: Terraform Validate
-      run: terraform validate
+#     - name: Terraform Validate
+#       run: terraform validate
 
-    - name: Terraform Plan
-      id: plan
-      run: |
-        terraform plan -no-color -input=false -out=tfplan
-      continue-on-error: true
+#     - name: Terraform Plan
+#       id: plan
+#       run: |
+#         terraform plan -no-color -input=false -out=tfplan
+#       continue-on-error: true
 
-    - name: Terraform Plan Status
-      if: steps.plan.outcome == 'failure'
-      run: exit 1
+#     - name: Terraform Plan Status
+#       if: steps.plan.outcome == 'failure'
+#       run: exit 1
 
-    - name: Terraform Apply
-      if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-      run: |
-        terraform apply -auto-approve -input=false
+#     - name: Terraform Apply
+#       if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+#       run: |
+#         terraform apply -auto-approve -input=false

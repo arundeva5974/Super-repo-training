@@ -1,105 +1,105 @@
-name: Docker Build, Push to ECR and Deploy to ECS
+# name: Docker Build, Push to ECR and Deploy to ECS
 
-on:
-  workflow_dispatch:
-  workflow_run:
-    workflows: ["Terraform"]
-    types: [completed]
-  push:
-    branches: [ main ]
-    paths:
-      - 'app/**'
-      - 'Dockerfile'
-      - '.github/workflows/docker-ecr-ecs.yml'
+# on:
+#   workflow_dispatch:
+#   workflow_run:
+#     workflows: ["Terraform"]
+#     types: [completed]
+#   push:
+#     branches: [ main ]
+#     paths:
+#       - 'app/**'
+#       - 'Dockerfile'
+#       - '.github/workflows/docker-ecr-ecs.yml'
 
-env:
-  AWS_REGION: us-east-1
-  ECR_REPOSITORY: demo-app
-  ECS_SERVICE: hello-world
-  ECS_CLUSTER: ecs-demo-cluster
-  CONTAINER_NAME: web-app
-  TASK_DEFINITION: task-definition.json
+# env:
+#   AWS_REGION: us-east-1
+#   ECR_REPOSITORY: demo-app
+#   ECS_SERVICE: hello-world
+#   ECS_CLUSTER: ecs-demo-cluster
+#   CONTAINER_NAME: web-app
+#   TASK_DEFINITION: task-definition.json
 
-jobs:
-  deploy:
-    name: Deploy
-    runs-on: ubuntu-latest
-    environment: production
-    if: >
-      ${{ (github.event_name == 'workflow_run' &&
-            github.event.workflow_run.conclusion == 'success' &&
-            github.event.workflow_run.head_branch == 'main')
-          || github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
+# jobs:
+#   deploy:
+#     name: Deploy
+#     runs-on: ubuntu-latest
+#     environment: production
+#     if: >
+#       ${{ (github.event_name == 'workflow_run' &&
+#             github.event.workflow_run.conclusion == 'success' &&
+#             github.event.workflow_run.head_branch == 'main')
+#           || github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
 
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v3
+#     steps:
+#     - name: Checkout
+#       uses: actions/checkout@v3
 
-    - name: Configure AWS credentials
-      uses: aws-actions/configure-aws-credentials@v1
-      with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: ${{ env.AWS_REGION }}
+#     - name: Configure AWS credentials
+#       uses: aws-actions/configure-aws-credentials@v1
+#       with:
+#         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+#         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+#         aws-region: ${{ env.AWS_REGION }}
 
-    - name: Login to Amazon ECR
-      id: login-ecr
-      uses: aws-actions/amazon-ecr-login@v1
+#     - name: Login to Amazon ECR
+#       id: login-ecr
+#       uses: aws-actions/amazon-ecr-login@v1
 
-    - name: Build and push image to Amazon ECR
-      id: build-image
-      env:
-        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-        ECR_REPOSITORY: ${{ env.ECR_REPOSITORY }}
-        IMAGE_TAG: ${{ github.sha }}
-      run: |
-        # Build the docker image
-        docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
-        # Push the image to ECR
-        docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-        # Set output for next steps
-        echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
+#     - name: Build and push image to Amazon ECR
+#       id: build-image
+#       env:
+#         ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+#         ECR_REPOSITORY: ${{ env.ECR_REPOSITORY }}
+#         IMAGE_TAG: ${{ github.sha }}
+#       run: |
+#         # Build the docker image
+#         docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+#         # Push the image to ECR
+#         docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+#         # Set output for next steps
+#         echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
 
-    - name: Generate task definition
-      run: |
-        cat > ${{ env.TASK_DEFINITION }} <<EOF
-        {
-          "family": "hello-world",
-          "networkMode": "awsvpc",
-          "executionRoleArn": "arn:aws:iam::901458576233:role/ecsTaskExecutionRole",
-          "containerDefinitions": [
-            {
-              "name": "web-app",
-              "image": "${{ steps.build-image.outputs.image }}",
-              "essential": true,
-              "portMappings": [
-                {
-                  "containerPort": 80,
-                  "hostPort": 80,
-                  "protocol": "tcp"
-                }
-              ]
-            }
-          ],
-          "requiresCompatibilities": ["EC2"],
-          "cpu": "256",
-          "memory": "512"
-        }
-        EOF
-        cat ${{ env.TASK_DEFINITION }}
+#     - name: Generate task definition
+#       run: |
+#         cat > ${{ env.TASK_DEFINITION }} <<EOF
+#         {
+#           "family": "hello-world",
+#           "networkMode": "awsvpc",
+#           "executionRoleArn": "arn:aws:iam::901458576233:role/ecsTaskExecutionRole",
+#           "containerDefinitions": [
+#             {
+#               "name": "web-app",
+#               "image": "${{ steps.build-image.outputs.image }}",
+#               "essential": true,
+#               "portMappings": [
+#                 {
+#                   "containerPort": 80,
+#                   "hostPort": 80,
+#                   "protocol": "tcp"
+#                 }
+#               ]
+#             }
+#           ],
+#           "requiresCompatibilities": ["EC2"],
+#           "cpu": "256",
+#           "memory": "512"
+#         }
+#         EOF
+#         cat ${{ env.TASK_DEFINITION }}
 
-    - name: Register task definition
-      id: task-def
-      uses: aws-actions/amazon-ecs-render-task-definition@v1
-      with:
-        task-definition: ${{ env.TASK_DEFINITION }}
-        container-name: web-app
-        image: ${{ steps.build-image.outputs.image }}
+#     - name: Register task definition
+#       id: task-def
+#       uses: aws-actions/amazon-ecs-render-task-definition@v1
+#       with:
+#         task-definition: ${{ env.TASK_DEFINITION }}
+#         container-name: web-app
+#         image: ${{ steps.build-image.outputs.image }}
 
-    - name: Deploy to ECS
-      uses: aws-actions/amazon-ecs-deploy-task-definition@v1
-      with:
-        task-definition: ${{ steps.task-def.outputs.task-definition }}
-        service: ${{ env.ECS_SERVICE }}
-        cluster: ${{ env.ECS_CLUSTER }}
-        wait-for-service-stability: true
+#     - name: Deploy to ECS
+#       uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+#       with:
+#         task-definition: ${{ steps.task-def.outputs.task-definition }}
+#         service: ${{ env.ECS_SERVICE }}
+#         cluster: ${{ env.ECS_CLUSTER }}
+#         wait-for-service-stability: true
