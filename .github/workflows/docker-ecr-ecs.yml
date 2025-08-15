@@ -14,6 +14,7 @@ env:
   ECS_SERVICE: hello-world
   ECS_CLUSTER: ecs-demo-cluster
   CONTAINER_NAME: web-app
+  TASK_DEFINITION: task-definition.json
 
 jobs:
   deploy:
@@ -36,7 +37,7 @@ jobs:
       id: login-ecr
       uses: aws-actions/amazon-ecr-login@v1
 
-    - name: Build, tag, and push image to Amazon ECR
+    - name: Build and push image to Amazon ECR
       id: build-image
       env:
         ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
@@ -50,10 +51,44 @@ jobs:
         # Set output for next steps
         echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
 
-    - name: Update ECS Service
+    - name: Generate task definition
+      run: |
+        cat > ${{ env.TASK_DEFINITION }} <<EOF
+        {
+          "family": "hello-world",
+          "networkMode": "awsvpc",
+          "executionRoleArn": "arn:aws:iam::901458576233:role/ecsTaskExecutionRole",
+          "containerDefinitions": [
+            {
+              "name": "web-app",
+              "image": "${{ steps.build-image.outputs.image }}",
+              "essential": true,
+              "portMappings": [
+                {
+                  "containerPort": 80,
+                  "hostPort": 80,
+                  "protocol": "tcp"
+                }
+              ]
+            }
+          ],
+          "requiresCompatibilities": ["EC2"],
+          "cpu": "256",
+          "memory": "512"
+        }
+        EOF
+        cat ${{ env.TASK_DEFINITION }}
+
+    - name: Register task definition
+      id: task-def
+      uses: aws-actions/amazon-ecs-render-task-definition@v1
+      with:
+        task-definition: ${{ env.TASK_DEFINITION }}
+
+    - name: Deploy to ECS
       uses: aws-actions/amazon-ecs-deploy-task-definition@v1
       with:
-        task-definition: task-definition.json
+        task-definition: ${{ steps.task-def.outputs.task-definition }}
         service: ${{ env.ECS_SERVICE }}
         cluster: ${{ env.ECS_CLUSTER }}
         wait-for-service-stability: true
